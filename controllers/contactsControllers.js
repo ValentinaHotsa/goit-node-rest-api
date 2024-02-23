@@ -1,4 +1,3 @@
-// const Contacts = require("../services/contactsServices");
 const Contact = require("../model/contactModel");
 const {
   createContactSchema,
@@ -19,7 +18,7 @@ const getAllContacts = async (req, res) => {
 const getOneContact = async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await Contact.findOne(id);
+    const result = await Contact.findById(id);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting contact by id:", error.message);
