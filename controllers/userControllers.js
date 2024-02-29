@@ -74,11 +74,17 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
-// TOKEN VALIDATION //
 
 // LOG OUT //
 
-// GET USER'S DATA //
+const logOut = async (req, res, next) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { token: null });
+    res.status.end();
+  } catch (error) {
+    next(error);
+  }
+};
 
 // EXPORTS //
-module.exports = { register, login };
+module.exports = { register, login, logOut };
