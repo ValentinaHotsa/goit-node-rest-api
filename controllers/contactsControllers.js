@@ -1,24 +1,36 @@
-const Contact = require("../model/contactModel");
+const { newContact } = require("../model/contactModel");
 const {
+  updateStatusSchema,
   createContactSchema,
   updateContactSchema,
-  updateStatusSchema,
-} = require("../schemas/contactsSchemas");
+} = require("../model/contactModel");
+
+// ----ALL CONTACTS----//
 
 const getAllContacts = async (req, res) => {
+  const { _id: owner } = req.user;
+
   try {
-    const result = await Contact.find();
+    const result = await newContact
+      .find({ owner })
+      .populate("owner", "name email");
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting contacts:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// ----GET ONE CONTACT----//
 
 const getOneContact = async (req, res) => {
   const { id } = req.params;
+  const { _id: owner } = req.user;
   try {
-    const result = await Contact.findById(id);
+    const result = await newContact
+      .findById(id)
+      .populate("owner", "name email")
+      .where("owner")
+      .equals(owner);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting contact by id:", error.message);
@@ -26,27 +38,15 @@ const getOneContact = async (req, res) => {
   }
 };
 
-const deleteContact = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const deletedContact = await Contact.findByIdAndDelete(id);
-    if (deletedContact) {
-      res.status(200).json(deletedContact);
-    } else {
-      res.status(404).json({ message: "Contact not found" });
-    }
-  } catch (error) {
-    res.status(404).json({ message: "Contact not found" });
-  }
-};
+// ----CREATE CONTACT----//
 
 const createContact = async (req, res) => {
+  const { _id: owner } = req.user;
   const { name, email, phone } = req.body;
 
   try {
     await createContactSchema.validateAsync({ name, email, phone });
-    const result = await Contact.create(name, email, phone);
+    const result = await newContact.create({ name, email, phone, owner });
     res.status(201).json(result);
   } catch (error) {
     console.error("Error creating contact", error.message);
@@ -54,7 +54,10 @@ const createContact = async (req, res) => {
   }
 };
 
+// ----UPDATE CONTACT----//
+
 const updateContact = async (req, res) => {
+  const { _id: owner } = req.user;
   const { id } = req.params;
   const { name, email, phone } = req.body;
 
@@ -65,13 +68,17 @@ const updateContact = async (req, res) => {
         .json({ message: "Body must have at least one field" });
     }
     await updateContactSchema.validateAsync({ name, email, phone });
-    const result = await Contact.findByIdAndUpdated(
-      { _id: id },
-      { name, email, phone },
-      {
-        new: true,
-      }
-    );
+    const result = await newContact
+      .findByIdAndUpdate(
+        id,
+        { name, email, phone },
+        {
+          new: true,
+        }
+      )
+      .where("owner")
+      .equals(owner);
+
     if (result) {
       res.status(200).json(result);
     } else {
@@ -83,13 +90,45 @@ const updateContact = async (req, res) => {
   }
 };
 
-const updateStatusContact = async (req, res) => {
+// ----DELETE CONTACT----//
+
+const deleteContact = async (req, res) => {
   const { id } = req.params;
+  const { _id: owner } = req.user;
 
   try {
-    const result = await Contact.findByIdAndUpdate({ _id: id }, req.body, {
-      new: true,
-    });
+    const deletedContact = await newContact
+      .findByIdAndDelete(id)
+      .where("owner")
+      .equals(owner);
+    if (deletedContact) {
+      res.status(200).json(deletedContact);
+    } else {
+      res.status(404).json({ message: "Contact not found" });
+    }
+  } catch (error) {
+    res.status(404).json({ message: "Contact not found" });
+  }
+};
+
+// ----UPDATE STATUS CONTACT----//
+
+const updateStatusContact = async (req, res) => {
+  const { id } = req.params;
+  const { _id: owner } = req.user;
+  const { favorite } = req.body;
+
+  try {
+    const result = await newContact
+      .findByIdAndUpdate(
+        id,
+        { favorite },
+        {
+          new: true,
+        }
+      )
+      .where("owner")
+      .equals(owner);
     if (result) {
       res.status(200).json(result);
     } else {
