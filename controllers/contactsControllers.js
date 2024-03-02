@@ -11,7 +11,9 @@ const getAllContacts = async (req, res) => {
   const { _id: owner } = req.user;
 
   try {
-    const result = await newContact.find({ owner });
+    const result = await newContact
+      .find({ owner })
+      .populate("owner", "name email");
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting contacts:", error.message);
@@ -21,9 +23,14 @@ const getAllContacts = async (req, res) => {
 // ----GET ONE CONTACT----//
 
 const getOneContact = async (req, res) => {
+  const { id } = req.params;
   const { _id: owner } = req.user;
   try {
-    const result = await newContact.findById(owner);
+    const result = await newContact
+      .findById(id)
+      .populate("owner", "name email")
+      .where("owner")
+      .equals(owner);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error getting contact by id:", error.message);
@@ -50,6 +57,7 @@ const createContact = async (req, res) => {
 // ----UPDATE CONTACT----//
 
 const updateContact = async (req, res) => {
+  const { _id: owner } = req.user;
   const { id } = req.params;
   const { name, email, phone } = req.body;
 
@@ -60,13 +68,17 @@ const updateContact = async (req, res) => {
         .json({ message: "Body must have at least one field" });
     }
     await updateContactSchema.validateAsync({ name, email, phone });
-    const result = await newContact.findByIdAndUpdated(
-      { _id: id },
-      { name, email, phone },
-      {
-        new: true,
-      }
-    );
+    const result = await newContact
+      .findByIdAndUpdate(
+        id,
+        { name, email, phone },
+        {
+          new: true,
+        }
+      )
+      .where("owner")
+      .equals(owner);
+
     if (result) {
       res.status(200).json(result);
     } else {
@@ -82,9 +94,13 @@ const updateContact = async (req, res) => {
 
 const deleteContact = async (req, res) => {
   const { id } = req.params;
+  const { _id: owner } = req.user;
 
   try {
-    const deletedContact = await newContact.findByIdAndDelete(id);
+    const deletedContact = await newContact
+      .findByIdAndDelete(id)
+      .where("owner")
+      .equals(owner);
     if (deletedContact) {
       res.status(200).json(deletedContact);
     } else {
@@ -100,11 +116,19 @@ const deleteContact = async (req, res) => {
 const updateStatusContact = async (req, res) => {
   const { id } = req.params;
   const { _id: owner } = req.user;
+  const { favorite } = req.body;
 
   try {
-    const result = await newContact.findByIdAndUpdate({ _id: id }, req.body, {
-      new: true,
-    });
+    const result = await newContact
+      .findByIdAndUpdate(
+        id,
+        { favorite },
+        {
+          new: true,
+        }
+      )
+      .where("owner")
+      .equals(owner);
     if (result) {
       res.status(200).json(result);
     } else {
