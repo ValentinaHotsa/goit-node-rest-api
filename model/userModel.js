@@ -2,6 +2,7 @@
 const { Schema, model } = require("mongoose");
 // const handleMongooseError = require("../helpers/handleMongooseError");
 const Joi = require("joi");
+// image.resize(250, 250);
 
 const userSchema = new Schema(
   {
